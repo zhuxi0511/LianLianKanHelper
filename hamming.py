@@ -8,13 +8,24 @@ from PIL import Image
 
 EXTS = 'jpg', 'jpeg', 'JPG', 'JPEG', 'gif', 'GIF', 'png', 'PNG'
 
+def make_regalur_image_histogram(im, size = (36, 36)):
+    if not isinstance(im, Image.Image):
+        im = Image.open(im)
+    return '\t'.join(map(str, im.resize(size).convert('RGB').histogram()))
+
+def hist_similar(lh, rh):
+    lh = map(int, lh.split('\t'))
+    rh = map(int, rh.split('\t'))
+    assert len(lh) == len(rh)
+    return sum(1 - (0 if l == r else float(abs(l - r))/max(l, r)) for l, r in zip(lh, rh))/len(lh)
+
 def avhash(im):
     if not isinstance(im, Image.Image):
         im = Image.open(im)
-    im = im.resize((8, 8), Image.ANTIALIAS).convert('L')
-    avg = reduce(lambda x, y: x + y, im.getdata()) / 64.
+    image = im.resize((8, 8), Image.ANTIALIAS).convert('L')
+    avg = reduce(lambda x, y: x + y, image.getdata()) / 64.
     return reduce(lambda x, (y, z): x | (z << y),
-                  enumerate(map(lambda i: 0 if i < avg else 1, im.getdata())),
+                  enumerate(map(lambda i: 0 if i < avg else 1, image.getdata())),
                   0)
 
 def hamming(h1, h2):

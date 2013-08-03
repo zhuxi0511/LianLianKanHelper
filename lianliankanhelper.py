@@ -5,7 +5,7 @@ sys.setrecursionlimit(25000)
 #from PIL import ImageGrab
 
 from PIL import Image
-from hamming import avhash, hamming
+from hamming import avhash, hamming, make_regalur_image_histogram, hist_similar
 from time import sleep
 
 dx = [0, 1, 0, -1]
@@ -13,7 +13,7 @@ dy = [1, 0, -1, 0]
 
 #class CalculationError
 
-class LianLianKanGuide(object):
+class LianLianKanHelper(object):
     def __init__(self):
         self.sign = None
         self.grab_screen()
@@ -157,13 +157,26 @@ class LianLianKanGuide(object):
             cut_left = min(cut_left, block[0][0])
             cut_top = min(cut_top, block[0][1])
         block_matrix = [[0 for j in range(12)] for i in range(16)]
+        self.image_matrix = [[0 for j in range(12)] for i in range(16)]
         for block in game_block_list:
             start_point, end_point = block
             postion_x = int(float(start_point[0] - cut_left) / standard_width + 0.5) + 1
             postion_y = int(float(start_point[1] - cut_top) / standard_height + 0.5) + 1
             if not block_matrix[postion_x][postion_y] == 0:
                 raise Exception
-            block_matrix[postion_x][postion_y] = avhash(self.im.crop(start_point + end_point))
+            # 非常给力的优化 切掉图像边上的一个像素的无用边
+            self.image_matrix[postion_x][postion_y] = self.im.crop(
+                    map(lambda x:x+1, start_point) + 
+                    map(lambda x:x-1, end_point)
+                    )
+            block_matrix[postion_x][postion_y] = avhash(
+                    self.image_matrix[postion_x][postion_y]
+                    )
+            """
+            block_matrix[postion_x][postion_y] = make_regalur_image_histogram(
+                    self.image_matrix[postion_x][postion_y]
+                    )
+            """
 
         same_block_dict = {}
         block_count = 1
@@ -175,6 +188,7 @@ class LianLianKanGuide(object):
                 finded = False
                 for key, value in same_block_dict.iteritems():
                     if hamming(row, key) <= 8:
+                    #if hist_similar(row, key) >= 0.80:
                         block_matrix[i][j] = value
                         finded = True
                         break
@@ -204,17 +218,9 @@ class LianLianKanGuide(object):
     def show_match_image(self, matrix, path):
         pass
 
-    def point(self):
-        #image.show()
-        image.save("screenshot.png")
-        #print list(image.getdata())
-        seq = image.getdata()
-        print seq[0]
-        #print image.height
-        print image.size
-        sleep(100)
-    
 if __name__ == '__main__':
-    llkg = LianLianKanGuide()
+    llkh = LianLianKanHelper()
     #print llkg.get_pixel(158,292)
-    llkg.build_matrix()
+    block_matrix = llkh.build_matrix()
+    llkh.find_match_path(block_matrix)
+
