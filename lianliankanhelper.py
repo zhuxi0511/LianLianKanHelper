@@ -2,9 +2,9 @@
 
 import sys
 sys.setrecursionlimit(25000)
-#from PIL import ImageGrab
+from PIL import ImageGrab
 
-from PIL import Image
+#from PIL import Image
 from hamming import avhash, hamming, make_regalur_image_histogram, hist_similar
 from time import sleep
 
@@ -23,8 +23,8 @@ class LianLianKanHelper(object):
         #return self.im.getpixel((x,y))
 
     def grab_screen(self):
-        #self.im = ImageGrab.grab()
-        self.im = Image.open('screenshot.png')
+        self.im = ImageGrab.grab()
+        #self.im = Image.open('screenshot.png')
         self.seq = self.im.getdata()
         self.width, self.height = self.im.size
 
@@ -125,7 +125,7 @@ class LianLianKanHelper(object):
                             for jj in range(location[0][1], location[1][1] + 1):
                                 self.sign[ii][jj] = 2
                         game_block_list.append(location)
-                        print location
+                        #print location
         return game_block_list
 
     def check_block_list(self, game_block_list):
@@ -187,7 +187,7 @@ class LianLianKanHelper(object):
 
                 finded = False
                 for key, value in same_block_dict.iteritems():
-                    if hamming(row, key) <= 8:
+                    if hamming(row, key) <= 6:
                     #if hist_similar(row, key) >= 0.80:
                         block_matrix[i][j] = value
                         finded = True
@@ -201,13 +201,13 @@ class LianLianKanHelper(object):
 
     def build_matrix(self):
         game_region_location = self.find_game_region()
-        print game_region_location
+        #print game_region_location
         game_block_list = self.find_game_block(game_region_location)
-        print len(game_block_list)
+        #print len(game_block_list)
         if self.check_block_list(game_block_list):
-            print 'here'
+            #print 'here'
             block_matrix = self.build_bolck_matrix(game_block_list)
-            print '\n'.join(map(lambda x:str(x), block_matrix))
+            #print '\n'.join(map(lambda x:str(x), block_matrix))
             return block_matrix
         else:
             raise Exception
