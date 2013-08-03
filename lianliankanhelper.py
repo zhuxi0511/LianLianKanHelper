@@ -3,7 +3,9 @@
 import sys
 sys.setrecursionlimit(25000)
 #from PIL import ImageGrab
+
 from PIL import Image
+from hamming import avhash, hamming
 from time import sleep
 
 dx = [0, 1, 0, -1]
@@ -59,7 +61,7 @@ class LianLianKanGuide(object):
                     if self.sign[new_x][new_y] == 1:
                         continue
                     pixel = self.get_pixel(new_x, new_y)
-                    if pixel[0] == 0 and pixel[1] <=25 and pixel[2] <= 40:
+                    if (pixel[0] == 0 and pixel[1] <=25 and pixel[2] <= 40):# or (abs(pixel[0] - pixel[1]) + abs(pixel[0] - pixel[2]) <= 0 and pixel[0] <= 127):
                     #if sum(self.get_pixel(new_x, new_y)) == 0:
                         self.sign[new_x][new_y] = 1
                         ret += 1
@@ -74,6 +76,7 @@ class LianLianKanGuide(object):
                     black_count = bfs(i, j)
                     if black_count >= self.width * self.height / 20:
                         print black_count, self.width * self.height / 20
+                        print i, j
                         location = self.find_reg_location((i, j),
                                 lambda x,y:self.sign[x][y] == 1)
                         return location
@@ -90,11 +93,11 @@ class LianLianKanGuide(object):
         height_point = y
         for i in range(start_point[0], width_point + 1):
             if not valied_func(i, height_point):
-                print 'except', i, height_point
+                #print 'except', i, height_point
                 raise Exception
         for j in range(start_point[1], height_point + 1):
             if not valied_func(width_point, j):
-                print 'except', width_point, j
+                #print 'except', width_point, j
                 raise Exception
         return (start_point, (width_point, height_point))
 
@@ -160,7 +163,26 @@ class LianLianKanGuide(object):
             postion_y = int(float(start_point[1] - cut_top) / standard_height + 0.5) + 1
             if not block_matrix[postion_x][postion_y] == 0:
                 raise Exception
-            block_matrix[postion_x][postion_y] = -1
+            block_matrix[postion_x][postion_y] = avhash(self.im.crop(start_point + end_point))
+
+        same_block_dict = {}
+        block_count = 1
+        for i, column in enumerate(block_matrix):
+            for j, row in enumerate(column):
+                if not row:
+                    continue
+
+                finded = False
+                for key, value in same_block_dict.iteritems():
+                    if hamming(row, key) <= 8:
+                        block_matrix[i][j] = value
+                        finded = True
+                        break
+                if not finded:
+                    block_matrix[i][j] = block_count
+                    same_block_dict[row] = block_count
+                    block_count += 1
+
         return block_matrix
 
     def build_matrix(self):
