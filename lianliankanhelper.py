@@ -213,14 +213,88 @@ class LianLianKanHelper(object):
             raise Exception
 
     def find_match_path(self, matrix):
-        pass
+        def is_in_range(x, y):
+            if 0 <= x and x < len(matrix) and 0 <= y and y < len(matrix[0]):
+                return True
+            return None
+
+        def is_free(x, y):
+            for l in range(4):
+                new_x = x + dx[l]
+                new_y = y + dy[l]
+                if is_in_range(new_x, new_y) and matrix[new_x][new_y] == 0:
+                    return True
+            return None
+        
+        def bfs(start_x, start_y):
+            queue = []
+            step_matrix = [[[10000 for l in range(4)] 
+                for j in range(12)] for i in range(16)]
+            father_matrix = [[[None for l in range(4)] 
+                for j in range(12)] for i in range(16)]
+            step_matrix[start_x][start_y] = [0] * 4
+            for l in range(4):
+                new_x = start_x + dx[l]
+                new_y = start_y + dy[l]
+                if is_in_range(new_x, new_y):
+                    queue.append(((new_x, new_y), l, 0))
+                    father_matrix[new_x][new_y][l] = ((start_x, start_y), l)
+            while len(queue) > 0:
+                point, direct, turns = queue.pop()
+                x, y = point
+
+                if matrix[x][y] == matrix[start_x][start_y] and matrix[x][y]:
+                    #print father_matrix
+                    end_x, end_y = x, y
+                    #return ((start_x, start_y), (end_x, end_y))
+                    while father_matrix[x][y][direct]:
+                        father_point, father_direct = father_matrix[x][y][direct]
+                        fp_x, fp_y = father_point
+                        if (fp_x, fp_y) == (start_x, start_y):
+                            return ((start_x, start_y), (end_x, end_y))
+                        matrix[fp_x][fp_y] = '*'
+                        x, y, direct = fp_x, fp_y, father_direct
+
+                if matrix[x][y]:
+                    continue
+                for l in range(4):
+                    new_x = x + dx[l]
+                    new_y = y + dy[l]
+                    need_turns = 1
+                    if direct == l:
+                        need_turns = 0
+                    try:
+                        if (is_in_range(new_x, new_y) and 
+                                turns + need_turns < 3 and 
+                                turns + need_turns < step_matrix[new_x][new_y][l]):
+                            queue.append(((new_x, new_y), l, turns + need_turns))
+                            step_matrix[new_x][new_y][l] = turns + need_turns
+                            father_matrix[new_x][new_y][l] = ((x, y), direct)
+                    except:
+                        print new_x, new_y, l
+                        raise
+
+        for i in range(len(matrix)):
+            for j in range(len(matrix[0])):
+                if matrix[i][j] and is_free(i, j):
+                    pair_result = bfs(i, j)
+                    if pair_result:
+                        return pair_result
 
     def show_match_image(self, matrix, path):
-        pass
+        result_matrix = [['' for j in range(len(matrix))] 
+                for i in range(len(matrix[0]))]
+        for j in range(len(matrix)):
+            for i in range(len(matrix[0])):
+                if not matrix[j][i] == 0:
+                    result_matrix[i][j] = matrix[j][i]
+        print '\n'.join(map(lambda x:''.join([str(xx) + '\t' for xx in x]), result_matrix))
+        print path
 
 if __name__ == '__main__':
     llkh = LianLianKanHelper()
     #print llkg.get_pixel(158,292)
     block_matrix = llkh.build_matrix()
-    llkh.find_match_path(block_matrix)
+    pair_result = llkh.find_match_path(block_matrix)
+    llkh.show_match_image(block_matrix, pair_result)
 
